@@ -1,0 +1,2074 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.37">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Patrick Shea">
+
+<title>Session 7: Panel Data and Two-Stage Models</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="Session7_PanelAndTwoStage_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Session7_PanelAndTwoStage_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="Session7_PanelAndTwoStage_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="Session7_PanelAndTwoStage_files/libs/quarto-html/popper.min.js"></script>
+<script src="Session7_PanelAndTwoStage_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Session7_PanelAndTwoStage_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Session7_PanelAndTwoStage_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Session7_PanelAndTwoStage_files/libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Session7_PanelAndTwoStage_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Session7_PanelAndTwoStage_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Session7_PanelAndTwoStage_files/libs/bootstrap/bootstrap-efbb37e9afcc02144ebbc7afd12a776f.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="fullcontent quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Session 7: Panel Data and Two-Stage Models</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Patrick Shea </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="about-this-document" class="level2">
+<h2 class="anchored" data-anchor-id="about-this-document">About this document</h2>
+<p>This is a <strong>Quarto</strong> document — it mixes explanatory text with executable R code. You can run each code chunk one at a time in RStudio, or click the <strong>Render</strong> button to produce a polished HTML page with all output embedded. No special setup is required beyond having the packages installed.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Set your working directory to the ICPSR_regression folder</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="do">## Change the path below to match your computer</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># setwd("~/ICPSR_regression")</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>())</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="st">"C:/Users/Patrick Shea/Dropbox/My Projects/Spring 2026/ICPSR/ICPSR_OLS26/data"</span>)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co"># install.packages(c("plm", "foreign", "gplots", "car", "stargazer",</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co">#                     "haven", "mediation", "sampleSelection", "AER"))</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(plm)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(foreign)</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gplots)</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(car)</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(stargazer)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<hr>
+</section>
+<section id="part-1-panel-data-methods" class="level1">
+<h1>Part 1: Panel Data Methods</h1>
+<section id="what-is-panel-data" class="level2">
+<h2 class="anchored" data-anchor-id="what-is-panel-data">What is panel data?</h2>
+<p>Up to now, every regression we’ve run has used <strong>cross-sectional</strong> data — one snapshot per unit. Panel data (also called longitudinal data) observes the <em>same</em> units repeatedly over time. This gives us a big advantage: we can separate changes <em>within</em> a unit from differences <em>between</em> units, which helps control for unobserved characteristics that might bias our estimates.</p>
+</section>
+<section id="loading-and-visualizing-panel-structure" class="level2">
+<h2 class="anchored" data-anchor-id="loading-and-visualizing-panel-structure">Loading and visualizing panel structure</h2>
+<p>We’ll start with a simple teaching dataset from Princeton that tracks several countries over time. It loads directly from a URL, so no local file is needed.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>Panel <span class="ot">&lt;-</span> <span class="fu">read.dta</span>(<span class="st">"http://dss.princeton.edu/training/Panel101.dta"</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(Panel)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  country year           y y_bin        x1         x2          x3   opinion op
+1       A 1990  1342787840     1 0.2779036 -1.1079559  0.28255358 Str agree  1
+2       A 1991 -1899660544     0 0.3206847 -0.9487200  0.49253848     Disag  0
+3       A 1992   -11234363     0 0.3634657 -0.7894840  0.70252335     Disag  0
+4       A 1993  2645775360     1 0.2461440 -0.8855330 -0.09439092     Disag  0
+5       A 1994  3008334848     1 0.4246230 -0.7297683  0.94613063     Disag  0
+6       A 1995  3229574144     1 0.4772141 -0.7232460  1.02968037 Str agree  1</code></pre>
+</div>
+</div>
+<section id="visualizing-how-units-change-over-time" class="level3">
+<h3 class="anchored" data-anchor-id="visualizing-how-units-change-over-time">Visualizing how units change over time</h3>
+<p>A key first step with panel data is to <em>see</em> the structure. The <code>coplot()</code> function shows the trajectory of each country in its own panel:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">coplot</span>(y <span class="sc">~</span> year <span class="sc">|</span> country, <span class="at">type =</span> <span class="st">"l"</span>, <span class="at">data =</span> Panel)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Session7_PanelAndTwoStage_files/figure-html/coplot-lines-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">coplot</span>(y <span class="sc">~</span> year <span class="sc">|</span> country, <span class="at">type =</span> <span class="st">"b"</span>, <span class="at">data =</span> Panel)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Session7_PanelAndTwoStage_files/figure-html/coplot-points-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The <code>scatterplot()</code> function from the <code>car</code> package overlays all countries on a single plot, colored by group:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">scatterplot</span>(y <span class="sc">~</span> year <span class="sc">|</span> country, <span class="at">boxplots =</span> <span class="cn">FALSE</span>, <span class="at">smooth =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>            <span class="at">reg.line =</span> <span class="cn">FALSE</span>, <span class="at">data =</span> Panel)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Session7_PanelAndTwoStage_files/figure-html/scatter-panel-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="the-heterogeneity-problem" class="level3">
+<h3 class="anchored" data-anchor-id="the-heterogeneity-problem">The heterogeneity problem</h3>
+<p>The whole motivation for panel methods is <strong>heterogeneity</strong> — some countries are systematically higher or lower on our outcome. Let’s visualize this directly.</p>
+<p>Heterogeneity across countries (unit effects):</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plotmeans</span>(y <span class="sc">~</span> country, <span class="at">main =</span> <span class="st">"Heterogeneity across countries"</span>, <span class="at">data =</span> Panel)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Session7_PanelAndTwoStage_files/figure-html/plotmeans-country-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Heterogeneity across years (time effects):</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plotmeans</span>(y <span class="sc">~</span> year, <span class="at">main =</span> <span class="st">"Heterogeneity across years"</span>, <span class="at">data =</span> Panel)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Session7_PanelAndTwoStage_files/figure-html/plotmeans-year-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>If these plots show big differences across countries or years, ignoring the panel structure will bias our estimates.</p>
+</section>
+</section>
+<section id="pooled-ols" class="level2">
+<h2 class="anchored" data-anchor-id="pooled-ols">Pooled OLS</h2>
+<p>The simplest approach is to ignore the panel structure and run ordinary OLS, treating every country-year as an independent observation:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>ols <span class="ot">&lt;-</span> <span class="fu">lm</span>(y <span class="sc">~</span> x1, <span class="at">data =</span> Panel)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(ols)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = y ~ x1, data = Panel)
+
+Residuals:
+       Min         1Q     Median         3Q        Max 
+-9.546e+09 -1.578e+09  1.554e+08  1.422e+09  7.183e+09 
+
+Coefficients:
+             Estimate Std. Error t value Pr(&gt;|t|)  
+(Intercept) 1.524e+09  6.211e+08   2.454   0.0167 *
+x1          4.950e+08  7.789e+08   0.636   0.5272  
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 3.028e+09 on 68 degrees of freedom
+Multiple R-squared:  0.005905,  Adjusted R-squared:  -0.008714 
+F-statistic: 0.4039 on 1 and 68 DF,  p-value: 0.5272</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(Panel<span class="sc">$</span>x1, Panel<span class="sc">$</span>y, <span class="at">pch =</span> <span class="dv">19</span>, <span class="at">xlab =</span> <span class="st">"x1"</span>, <span class="at">ylab =</span> <span class="st">"y"</span>)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">abline</span>(<span class="fu">lm</span>(Panel<span class="sc">$</span>y <span class="sc">~</span> Panel<span class="sc">$</span>x1), <span class="at">lwd =</span> <span class="dv">3</span>, <span class="at">col =</span> <span class="st">"red"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Session7_PanelAndTwoStage_files/figure-html/pooled-plot-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>This gives us one slope and one intercept. The implicit assumption is that <em>all countries are identical</em> — there’s no unobserved country-level factor affecting the outcome. That’s a strong assumption.</p>
+</section>
+<section id="fixed-effects-the-intuition" class="level2">
+<h2 class="anchored" data-anchor-id="fixed-effects-the-intuition">Fixed effects: the intuition</h2>
+<p>Fixed effects deals with heterogeneity by comparing each country <strong>to itself</strong> over time. The simplest way to understand this is to decompose each variable into two parts:</p>
+<ul>
+<li><strong>Between variation</strong> = each country’s average (how countries differ from each other)</li>
+<li><strong>Within variation</strong> = each country’s deviations from its own average (how a country changes over time)</li>
+</ul>
+<p>Fixed effects throws away the between variation and uses only the within variation.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Decompose x1 into within and between components</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>btw.x <span class="ot">&lt;-</span> <span class="fu">ave</span>(Panel<span class="sc">$</span>x1, Panel<span class="sc">$</span>country)   <span class="co"># Between: country means</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>wi.x  <span class="ot">&lt;-</span> Panel<span class="sc">$</span>x1 <span class="sc">-</span> btw.x              <span class="co"># Within: deviations from country means</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Fixed effects = regression on within variation only</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>fixed.hand <span class="ot">&lt;-</span> <span class="fu">lm</span>(Panel<span class="sc">$</span>y <span class="sc">~</span> wi.x)</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fixed.hand)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = Panel$y ~ wi.x)
+
+Residuals:
+       Min         1Q     Median         3Q        Max 
+-9.174e+09 -1.868e+09  3.073e+08  1.492e+09  7.327e+09 
+
+Coefficients:
+             Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept) 1.845e+09  3.515e+08   5.249 1.65e-06 ***
+wi.x        2.476e+09  1.164e+09   2.126   0.0371 *  
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 2.941e+09 on 68 degrees of freedom
+Multiple R-squared:  0.06234,   Adjusted R-squared:  0.04855 
+F-statistic: 4.521 on 1 and 68 DF,  p-value: 0.03711</code></pre>
+</div>
+</div>
+<p>We can also include <em>both</em> components to see how they differ:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>fixed.hand2 <span class="ot">&lt;-</span> <span class="fu">lm</span>(Panel<span class="sc">$</span>y <span class="sc">~</span> wi.x <span class="sc">+</span> btw.x)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fixed.hand2)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = Panel$y ~ wi.x + btw.x)
+
+Residuals:
+       Min         1Q     Median         3Q        Max 
+-9.281e+09 -1.910e+09  3.704e+08  1.375e+09  7.305e+09 
+
+Coefficients:
+              Estimate Std. Error t value Pr(&gt;|t|)   
+(Intercept) 2461785986  734855303   3.350  0.00133 **
+wi.x        2475617827 1165016294   2.125  0.03728 * 
+btw.x       -951717959  995682134  -0.956  0.34259   
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 2.943e+09 on 67 degrees of freedom
+Multiple R-squared:  0.07496,   Adjusted R-squared:  0.04734 
+F-statistic: 2.715 on 2 and 67 DF,  p-value: 0.07352</code></pre>
+</div>
+</div>
+<p>If the within and between coefficients are very different, it suggests that unobserved country-level confounders are biasing the between estimate — exactly the situation where fixed effects helps.</p>
+</section>
+<section id="fixed-effects-with-dummy-variables-lsdv" class="level2">
+<h2 class="anchored" data-anchor-id="fixed-effects-with-dummy-variables-lsdv">Fixed effects with dummy variables (LSDV)</h2>
+<p>An equivalent approach is to include a separate intercept for each country. This is the <strong>Least Squares Dummy Variable</strong> estimator:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>fixed.dum <span class="ot">&lt;-</span> <span class="fu">lm</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> <span class="fu">factor</span>(country) <span class="sc">-</span> <span class="dv">1</span>, <span class="at">data =</span> Panel)</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fixed.dum)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = y ~ x1 + factor(country) - 1, data = Panel)
+
+Residuals:
+       Min         1Q     Median         3Q        Max 
+-8.634e+09 -9.697e+08  5.405e+08  1.386e+09  5.612e+09 
+
+Coefficients:
+                   Estimate Std. Error t value Pr(&gt;|t|)    
+x1                2.476e+09  1.107e+09   2.237  0.02889 *  
+factor(country)A  8.805e+08  9.618e+08   0.916  0.36347    
+factor(country)B -1.058e+09  1.051e+09  -1.006  0.31811    
+factor(country)C -1.723e+09  1.632e+09  -1.056  0.29508    
+factor(country)D  3.163e+09  9.095e+08   3.478  0.00093 ***
+factor(country)E -6.026e+08  1.064e+09  -0.566  0.57329    
+factor(country)F  2.011e+09  1.123e+09   1.791  0.07821 .  
+factor(country)G -9.847e+08  1.493e+09  -0.660  0.51190    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 2.796e+09 on 62 degrees of freedom
+Multiple R-squared:  0.4402,    Adjusted R-squared:  0.368 
+F-statistic: 6.095 on 8 and 62 DF,  p-value: 8.892e-06</code></pre>
+</div>
+</div>
+<p>Each country gets its own intercept, but they all share the same slope on <code>x1</code>. We can visualize the fitted values:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>yhat2 <span class="ot">&lt;-</span> fixed.dum<span class="sc">$</span>fitted</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">scatterplot</span>(yhat2 <span class="sc">~</span> Panel<span class="sc">$</span>x1 <span class="sc">|</span> Panel<span class="sc">$</span>country, <span class="at">boxplots =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>            <span class="at">xlab =</span> <span class="st">"x1"</span>, <span class="at">ylab =</span> <span class="st">"Fitted values"</span>, <span class="at">smooth =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Session7_PanelAndTwoStage_files/figure-html/fe-lsdv-plot-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="fixed-effects-with-plm" class="level2">
+<h2 class="anchored" data-anchor-id="fixed-effects-with-plm">Fixed effects with plm</h2>
+<p>In practice, we use the <code>plm</code> package, which handles the demeaning automatically and produces clean output:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>fixed <span class="ot">&lt;-</span> <span class="fu">plm</span>(y <span class="sc">~</span> x1, <span class="at">data =</span> Panel,</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>             <span class="at">index =</span> <span class="fu">c</span>(<span class="st">"country"</span>, <span class="st">"year"</span>), <span class="at">model =</span> <span class="st">"within"</span>)</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fixed)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Oneway (individual) effect Within Model
+
+Call:
+plm(formula = y ~ x1, data = Panel, model = "within", index = c("country", 
+    "year"))
+
+Balanced Panel: n = 7, T = 10, N = 70
+
+Residuals:
+     Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
+-8.63e+09 -9.70e+08  5.40e+08  0.00e+00  1.39e+09  5.61e+09 
+
+Coefficients:
+     Estimate Std. Error t-value Pr(&gt;|t|)  
+x1 2475617827 1106675594   2.237  0.02889 *
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Total Sum of Squares:    5.2364e+20
+Residual Sum of Squares: 4.8454e+20
+R-Squared:      0.074684
+Adj. R-Squared: -0.029788
+F-statistic: 5.00411 on 1 and 62 DF, p-value: 0.028892</code></pre>
+</div>
+</div>
+<p>We can extract the country-specific intercepts (the “fixed effects” themselves):</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">fixef</span>(fixed)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          A           B           C           D           E           F 
+  880542404 -1057858363 -1722810755  3162826897  -602622000  2010731793 
+          G 
+ -984717493 </code></pre>
+</div>
+</div>
+<p>And formally test whether fixed effects are needed versus pooled OLS. The null hypothesis is that all individual intercepts are equal (i.e., pooled OLS is adequate):</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pFtest</span>(fixed, ols)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    F test for individual effects
+
+data:  y ~ x1
+F = 2.9655, df1 = 6, df2 = 62, p-value = 0.01307
+alternative hypothesis: significant effects</code></pre>
+</div>
+</div>
+<p>A significant result means the country effects are real and we should not ignore them.</p>
+</section>
+<section id="random-effects" class="level2">
+<h2 class="anchored" data-anchor-id="random-effects">Random effects</h2>
+<p>The <strong>random effects</strong> model also accounts for individual heterogeneity, but assumes it is <em>random</em> and <em>uncorrelated with the predictors</em>. If that assumption holds, random effects is more efficient because it uses both within- and between-unit variation:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>random <span class="ot">&lt;-</span> <span class="fu">plm</span>(y <span class="sc">~</span> x1, <span class="at">data =</span> Panel,</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>              <span class="at">index =</span> <span class="fu">c</span>(<span class="st">"country"</span>, <span class="st">"year"</span>), <span class="at">model =</span> <span class="st">"random"</span>)</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(random)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Oneway (individual) effect Random Effect Model 
+   (Swamy-Arora's transformation)
+
+Call:
+plm(formula = y ~ x1, data = Panel, model = "random", index = c("country", 
+    "year"))
+
+Balanced Panel: n = 7, T = 10, N = 70
+
+Effects:
+                    var   std.dev share
+idiosyncratic 7.815e+18 2.796e+09 0.873
+individual    1.133e+18 1.065e+09 0.127
+theta: 0.3611
+
+Residuals:
+     Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
+-8.94e+09 -1.51e+09  2.82e+08  0.00e+00  1.56e+09  6.63e+09 
+
+Coefficients:
+              Estimate Std. Error z-value Pr(&gt;|z|)
+(Intercept) 1037014284  790626206  1.3116   0.1896
+x1          1247001782  902145601  1.3823   0.1669
+
+Total Sum of Squares:    5.6595e+20
+Residual Sum of Squares: 5.5048e+20
+R-Squared:      0.02733
+Adj. R-Squared: 0.013026
+Chisq: 1.91065 on 1 DF, p-value: 0.16689</code></pre>
+</div>
+</div>
+</section>
+<section id="comparing-all-three-models" class="level2">
+<h2 class="anchored" data-anchor-id="comparing-all-three-models">Comparing all three models</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">stargazer</span>(ols, fixed, random, <span class="at">type =</span> <span class="st">"html"</span>,</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>          <span class="at">column.labels =</span> <span class="fu">c</span>(<span class="st">"Pooled OLS"</span>, <span class="st">"Fixed Effects"</span>, <span class="st">"Random Effects"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<table style="text-align:center">
+<tbody><tr>
+<td colspan="4" style="border-bottom: 1px solid black">
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td colspan="3">
+<em>Dependent variable:</em>
+</td>
+</tr>
+<tr>
+<td>
+</td>
+<td colspan="3" style="border-bottom: 1px solid black">
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td colspan="3">
+y
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+<em>OLS</em>
+</td>
+<td colspan="2">
+<em>panel</em>
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+<em></em>
+</td>
+<td colspan="2">
+<em>linear</em>
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+Pooled OLS
+</td>
+<td>
+Fixed Effects
+</td>
+<td>
+Random Effects
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+(1)
+</td>
+<td>
+(2)
+</td>
+<td>
+(3)
+</td>
+</tr>
+<tr>
+<td colspan="4" style="border-bottom: 1px solid black">
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+x1
+</td>
+<td>
+494,988,914.000
+</td>
+<td>
+2,475,617,827.000<sup>**</sup>
+</td>
+<td>
+1,247,001,782.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+(778,861,261.000)
+</td>
+<td>
+(1,106,675,594.000)
+</td>
+<td>
+(902,145,601.000)
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+</td>
+<td>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Constant
+</td>
+<td>
+1,524,319,070.000<sup>**</sup>
+</td>
+<td>
+</td>
+<td>
+1,037,014,284.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+(621,072,624.000)
+</td>
+<td>
+</td>
+<td>
+(790,626,206.000)
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+</td>
+<td>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td colspan="4" style="border-bottom: 1px solid black">
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Observations
+</td>
+<td>
+70
+</td>
+<td>
+70
+</td>
+<td>
+70
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+R<sup>2</sup>
+</td>
+<td>
+0.006
+</td>
+<td>
+0.075
+</td>
+<td>
+0.027
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Adjusted R<sup>2</sup>
+</td>
+<td>
+-0.009
+</td>
+<td>
+-0.030
+</td>
+<td>
+0.013
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Residual Std. Error
+</td>
+<td>
+3,028,276,248.000 (df = 68)
+</td>
+<td>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+F Statistic
+</td>
+<td>
+0.404 (df = 1; 68)
+</td>
+<td>
+5.004<sup>**</sup> (df = 1; 62)
+</td>
+<td>
+1.911
+</td>
+</tr>
+<tr>
+<td colspan="4" style="border-bottom: 1px solid black">
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+<em>Note:</em>
+</td>
+<td colspan="3" style="text-align:right">
+<sup><em></em></sup><em>p&lt;0.1; <sup><strong></strong></sup><strong>p&lt;0.05; <sup></sup></strong></em>p&lt;0.01
+</td>
+</tr>
+</tbody></table>
+</section>
+<section id="hausman-test-choosing-between-fe-and-re" class="level2">
+<h2 class="anchored" data-anchor-id="hausman-test-choosing-between-fe-and-re">Hausman test: choosing between FE and RE</h2>
+<p>The <strong>Hausman test</strong> checks whether the random effects assumption (no correlation between individual effects and predictors) is valid.</p>
+<ul>
+<li>H0: Random effects is consistent (no correlation).</li>
+<li>H1: Only fixed effects is consistent.</li>
+</ul>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">phtest</span>(fixed, random)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Hausman Test
+
+data:  y ~ x1
+chisq = 3.674, df = 1, p-value = 0.05527
+alternative hypothesis: one model is inconsistent</code></pre>
+</div>
+</div>
+<p>If <span class="math inline">\(p &lt; 0.05\)</span>, reject H0 and use fixed effects. Otherwise, random effects is acceptable.</p>
+</section>
+<section id="additional-diagnostic-tests" class="level2">
+<h2 class="anchored" data-anchor-id="additional-diagnostic-tests">Additional diagnostic tests</h2>
+<section id="time-fixed-effects" class="level3">
+<h3 class="anchored" data-anchor-id="time-fixed-effects">Time fixed effects</h3>
+<p>Should we also control for year-specific shocks? We add year dummies and test whether they’re jointly significant:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>fixed.time <span class="ot">&lt;-</span> <span class="fu">plm</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> <span class="fu">factor</span>(year), <span class="at">data =</span> Panel,</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>                  <span class="at">index =</span> <span class="fu">c</span>(<span class="st">"country"</span>, <span class="st">"year"</span>), <span class="at">model =</span> <span class="st">"within"</span>)</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="fu">pFtest</span>(fixed.time, fixed)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    F test for individual effects
+
+data:  y ~ x1 + factor(year)
+F = 1.209, df1 = 9, df2 = 53, p-value = 0.3094
+alternative hypothesis: significant effects</code></pre>
+</div>
+</div>
+<p>A significant result means time effects matter and should be included.</p>
+</section>
+<section id="serial-correlation" class="level3">
+<h3 class="anchored" data-anchor-id="serial-correlation">Serial correlation</h3>
+<p>Panel data often exhibits serial correlation — observations for the same unit in adjacent years are correlated. The Breusch-Godfrey test checks for this:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pbgtest</span>(fixed)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Breusch-Godfrey/Wooldridge test for serial correlation in panel models
+
+data:  y ~ x1
+chisq = 14.137, df = 10, p-value = 0.1668
+alternative hypothesis: serial correlation in idiosyncratic errors</code></pre>
+</div>
+</div>
+<p>If significant, we may need to cluster our standard errors or use other corrections.</p>
+<hr>
+</section>
+</section>
+</section>
+<section id="part-2-two-stage-models" class="level1">
+<h1>Part 2: Two-Stage Models</h1>
+<p>Panel data addresses unobserved heterogeneity. But what about <strong>reverse causality</strong> or <strong>omitted pathway</strong> problems? This section covers three strategies: mediation analysis, sample selection correction, and instrumental variables.</p>
+<p>We’ll use the Acemoglu, Johnson, and Robinson (AJR) dataset, which studies how colonial-era settler mortality affected modern economic outcomes through the quality of institutions.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(haven)</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mediation)</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sampleSelection)</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(AER)</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>ajr2 <span class="ot">&lt;-</span> <span class="fu">read_dta</span>(<span class="st">"ajr2.dta"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<section id="mediation-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="mediation-analysis">Mediation analysis</h2>
+<p><strong>Research question:</strong> Does settler mortality affect GDP <em>through</em> the quality of institutions, or does it have a direct effect as well?</p>
+<p>The causal chain we hypothesize is:</p>
+<p><span class="math display">\[\text{Settler Mortality} \longrightarrow \text{Institutions (risk)} \longrightarrow \text{GDP}\]</span></p>
+<p>Mediation analysis decomposes the total effect into a <strong>direct</strong> path and an <strong>indirect</strong> path (through the mediator).</p>
+<section id="step-1-total-effect-without-the-mediator" class="level3">
+<h3 class="anchored" data-anchor-id="step-1-total-effect-without-the-mediator">Step 1: Total effect (without the mediator)</h3>
+<p>First, what is the overall relationship between settler mortality and GDP?</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>total_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(loggdp <span class="sc">~</span> logmort0, <span class="at">data =</span> ajr2)</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(total_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = loggdp ~ logmort0, data = ajr2)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-2.7325 -0.5197  0.1361  0.4801  1.4123 
+
+Coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept) 10.69980    0.37395  28.613  &lt; 2e-16 ***
+logmort0    -0.57005    0.07774  -7.332  5.7e-10 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 0.7729 on 62 degrees of freedom
+Multiple R-squared:  0.4644,    Adjusted R-squared:  0.4558 
+F-statistic: 53.77 on 1 and 62 DF,  p-value: 5.704e-10</code></pre>
+</div>
+</div>
+</section>
+<section id="step-2-effect-of-x-on-the-mediator" class="level3">
+<h3 class="anchored" data-anchor-id="step-2-effect-of-x-on-the-mediator">Step 2: Effect of X on the mediator</h3>
+<p>Does settler mortality predict institutional quality?</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>mediator_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(risk <span class="sc">~</span> logmort0, <span class="at">data =</span> ajr2)</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(mediator_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = risk ~ logmort0, data = ajr2)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-2.6507 -0.9889  0.0324  0.8498  3.3768 
+
+Coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)   9.3659     0.6106  15.339  &lt; 2e-16 ***
+logmort0     -0.6133     0.1269  -4.831 9.27e-06 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 1.262 on 62 degrees of freedom
+Multiple R-squared:  0.2735,    Adjusted R-squared:  0.2618 
+F-statistic: 23.34 on 1 and 62 DF,  p-value: 9.273e-06</code></pre>
+</div>
+</div>
+</section>
+<section id="step-3-direct-and-indirect-effects" class="level3">
+<h3 class="anchored" data-anchor-id="step-3-direct-and-indirect-effects">Step 3: Direct and indirect effects</h3>
+<p>When we include <em>both</em> settler mortality and institutions in the same model, we can see the direct effect of mortality (controlling for institutions) and use the coefficients to calculate the indirect effect:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>outcome_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(loggdp <span class="sc">~</span> risk <span class="sc">+</span> logmort0, <span class="at">data =</span> ajr2)</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(outcome_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = loggdp ~ risk + logmort0, data = ajr2)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-2.14198 -0.30514  0.08318  0.41165  1.16421 
+
+Coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)  7.32255    0.66726  10.974 4.52e-16 ***
+risk         0.36059    0.06338   5.689 3.86e-07 ***
+logmort0    -0.34890    0.07433  -4.694 1.56e-05 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 0.6298 on 61 degrees of freedom
+Multiple R-squared:  0.6501,    Adjusted R-squared:  0.6386 
+F-statistic: 56.67 on 2 and 61 DF,  p-value: 1.231e-14</code></pre>
+</div>
+</div>
+<p>The indirect effect is the product of the path from X to the mediator and the path from the mediator to Y:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>coef_risk     <span class="ot">&lt;-</span> <span class="fu">coef</span>(outcome_model)[<span class="st">"risk"</span>]</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>coef_logmort0 <span class="ot">&lt;-</span> <span class="fu">coef</span>(mediator_model)[<span class="st">"logmort0"</span>]</span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>indirect_effect <span class="ot">&lt;-</span> coef_risk <span class="sc">*</span> coef_logmort0</span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>indirect_effect</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      risk 
+-0.2211458 </code></pre>
+</div>
+</div>
+</section>
+<section id="formal-mediation-test" class="level3">
+<h3 class="anchored" data-anchor-id="formal-mediation-test">Formal mediation test</h3>
+<p>The <code>mediate()</code> function uses bootstrapping to get proper confidence intervals for the indirect, direct, and total effects:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">12345</span>)</span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>mediation_result <span class="ot">&lt;-</span> <span class="fu">mediate</span>(mediator_model, outcome_model,</span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>                            <span class="at">treat =</span> <span class="st">"logmort0"</span>, <span class="at">mediator =</span> <span class="st">"risk"</span>,</span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>                            <span class="at">sims =</span> <span class="dv">1000</span>, <span class="at">boot =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(mediation_result)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Causal Mediation Analysis 
+
+Nonparametric Bootstrap Confidence Intervals with the Percentile Method
+
+               Estimate 95% CI Lower 95% CI Upper   p-value    
+ACME           -0.22115     -0.38007     -0.10056 &lt; 2.2e-16 ***
+ADE            -0.34890     -0.49019     -0.17335 &lt; 2.2e-16 ***
+Total Effect   -0.57005     -0.72107     -0.42703 &lt; 2.2e-16 ***
+Prop. Mediated  0.38794      0.19684      0.65096 &lt; 2.2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Sample Size Used: 64 
+
+
+Simulations: 1000 </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(mediation_result)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Session7_PanelAndTwoStage_files/figure-html/mediation-plot-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>How to read the output:</strong></p>
+<ul>
+<li><strong>ACME</strong> (Average Causal Mediation Effect) = the indirect effect through institutions</li>
+<li><strong>ADE</strong> (Average Direct Effect) = the part of settler mortality’s effect that doesn’t go through institutions</li>
+<li><strong>Total Effect</strong> = ACME + ADE</li>
+<li><strong>Proportion Mediated</strong> = what fraction of the total effect operates through the mediator</li>
+</ul>
+</section>
+</section>
+<section id="sample-selection-models-heckman-correction" class="level2">
+<h2 class="anchored" data-anchor-id="sample-selection-models-heckman-correction">Sample selection models (Heckman correction)</h2>
+<p>Sometimes we observe the outcome only for a non-random subset of the population. For example, we only observe wages for people who <em>choose to work</em>. If the decision to work is correlated with wage determinants, naive OLS on the working subsample is biased.</p>
+<p>The <strong>Heckman selection model</strong> corrects for this by jointly modeling the selection equation (who works?) and the outcome equation (what wage do workers earn?).</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(<span class="st">"Mroz87"</span>, <span class="at">package =</span> <span class="st">"sampleSelection"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>First, the <strong>naive approach</strong> — just running OLS on people who work:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>working_women <span class="ot">&lt;-</span> <span class="fu">subset</span>(Mroz87, lfp <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>naive_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(<span class="fu">log</span>(wage) <span class="sc">~</span> educ <span class="sc">+</span> exper <span class="sc">+</span> <span class="fu">I</span>(exper<span class="sc">^</span><span class="dv">2</span>) <span class="sc">+</span> age,</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>                  <span class="at">data =</span> working_women)</span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(naive_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = log(wage) ~ educ + exper + I(exper^2) + age, data = working_women)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-3.08521 -0.30587  0.04946  0.37523  2.37077 
+
+Coefficients:
+              Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept) -0.5333761  0.2778430  -1.920  0.05557 .  
+educ         0.1075228  0.0141745   7.586 2.12e-13 ***
+exper        0.0415623  0.0131909   3.151  0.00174 ** 
+I(exper^2)  -0.0008152  0.0003996  -2.040  0.04195 *  
+age          0.0002836  0.0048553   0.058  0.95344    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 0.6672 on 423 degrees of freedom
+Multiple R-squared:  0.1568,    Adjusted R-squared:  0.1489 
+F-statistic: 19.67 on 4 and 423 DF,  p-value: 7.328e-15</code></pre>
+</div>
+</div>
+<p>Now the <strong>Heckman two-step estimator</strong>. The selection equation includes variables that affect the decision to work (including <code>kids5</code> and <code>kids618</code>, which plausibly affect participation but not wages directly). The outcome equation models wages conditional on working:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>selection_formula <span class="ot">&lt;-</span> lfp <span class="sc">~</span> nwifeinc <span class="sc">+</span> educ <span class="sc">+</span> exper <span class="sc">+</span> <span class="fu">I</span>(exper<span class="sc">^</span><span class="dv">2</span>) <span class="sc">+</span> age <span class="sc">+</span> kids5 <span class="sc">+</span> kids618</span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>outcome_formula   <span class="ot">&lt;-</span> <span class="fu">log</span>(wage) <span class="sc">~</span> educ <span class="sc">+</span> exper <span class="sc">+</span> <span class="fu">I</span>(exper<span class="sc">^</span><span class="dv">2</span>) <span class="sc">+</span> age</span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>heckman_result <span class="ot">&lt;-</span> <span class="fu">selection</span>(selection_formula, outcome_formula,</span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a>                            <span class="at">data =</span> Mroz87, <span class="at">method =</span> <span class="st">"2step"</span>)</span>
+<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(heckman_result)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>--------------------------------------------
+Tobit 2 model (sample selection model)
+2-step Heckman / heckit estimation
+753 observations (325 censored and 428 observed)
+16 free parameters (df = 738)
+Probit selection equation:
+             Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)  0.270077   0.508593   0.531  0.59556    
+nwifeinc    -0.012024   0.004840  -2.484  0.01320 *  
+educ         0.130905   0.025254   5.183 2.81e-07 ***
+exper        0.123348   0.018716   6.590 8.35e-11 ***
+I(exper^2)  -0.001887   0.000600  -3.145  0.00173 ** 
+age         -0.052853   0.008477  -6.235 7.62e-10 ***
+kids5       -0.868328   0.118522  -7.326 6.22e-13 ***
+kids618      0.036005   0.043477   0.828  0.40786    
+Outcome equation:
+              Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept) -0.5708801  0.3120663  -1.829   0.0677 .  
+educ         0.1095345  0.0161004   6.803 2.12e-11 ***
+exper        0.0447027  0.0178719   2.501   0.0126 *  
+I(exper^2)  -0.0008664  0.0004439  -1.952   0.0514 .  
+age         -0.0006676  0.0060686  -0.110   0.9124    
+Multiple R-Squared:0.157,   Adjusted R-Squared:0.147
+   Error terms:
+              Estimate Std. Error t value Pr(&gt;|t|)
+invMillsRatio  0.04346    0.16797   0.259    0.796
+sigma          0.66392         NA      NA       NA
+rho            0.06546         NA      NA       NA
+--------------------------------------------</code></pre>
+</div>
+</div>
+<p>Comparing the naive OLS with the selection-corrected estimates:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="fu">stargazer</span>(naive_model, heckman_result, <span class="at">type =</span> <span class="st">"html"</span>,</span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>          <span class="at">column.labels =</span> <span class="fu">c</span>(<span class="st">"Naive OLS"</span>, <span class="st">"Heckman Selection"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<table style="text-align:center">
+<tbody><tr>
+<td colspan="3" style="border-bottom: 1px solid black">
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td colspan="2">
+<em>Dependent variable:</em>
+</td>
+</tr>
+<tr>
+<td>
+</td>
+<td colspan="2" style="border-bottom: 1px solid black">
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+log(wage)
+</td>
+<td>
+NA
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+<em>OLS</em>
+</td>
+<td>
+<em>selection</em>
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+Naive OLS
+</td>
+<td>
+Heckman Selection
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+(1)
+</td>
+<td>
+(2)
+</td>
+</tr>
+<tr>
+<td colspan="3" style="border-bottom: 1px solid black">
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+educ
+</td>
+<td>
+0.108<sup>***</sup>
+</td>
+<td>
+0.110<sup>***</sup>
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+(0.014)
+</td>
+<td>
+(0.016)
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+exper
+</td>
+<td>
+0.042<sup>***</sup>
+</td>
+<td>
+0.045<sup>**</sup>
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+(0.013)
+</td>
+<td>
+(0.018)
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+I(exper2)
+</td>
+<td>
+-0.001<sup>**</sup>
+</td>
+<td>
+-0.001<sup>*</sup>
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+(0.0004)
+</td>
+<td>
+(0.0004)
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+age
+</td>
+<td>
+0.0003
+</td>
+<td>
+-0.001
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+(0.005)
+</td>
+<td>
+(0.006)
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Constant
+</td>
+<td>
+-0.533<sup>*</sup>
+</td>
+<td>
+-0.571<sup>*</sup>
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+(0.278)
+</td>
+<td>
+(0.312)
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td colspan="3" style="border-bottom: 1px solid black">
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Observations
+</td>
+<td>
+428
+</td>
+<td>
+753
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+R<sup>2</sup>
+</td>
+<td>
+0.157
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Adjusted R<sup>2</sup>
+</td>
+<td>
+0.149
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+rho
+</td>
+<td>
+</td>
+<td>
+0.065
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Inverse Mills Ratio
+</td>
+<td>
+</td>
+<td>
+0.043 (0.168)
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Residual Std. Error
+</td>
+<td>
+0.667 (df = 423)
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+F Statistic
+</td>
+<td>
+19.669<sup>***</sup> (df = 4; 423)
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td colspan="3" style="border-bottom: 1px solid black">
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+<em>Note:</em>
+</td>
+<td colspan="2" style="text-align:right">
+<sup><em></em></sup><em>p&lt;0.1; <sup><strong></strong></sup><strong>p&lt;0.05; <sup></sup></strong></em>p&lt;0.01
+</td>
+</tr>
+</tbody></table>
+<p>If the <strong>inverse Mills ratio</strong> (the selection correction term, often labeled <span class="math inline">\(\lambda\)</span> or <code>rho</code>) is significant, it means selection bias was present and the correction matters.</p>
+</section>
+<section id="instrumental-variables" class="level2">
+<h2 class="anchored" data-anchor-id="instrumental-variables">Instrumental variables</h2>
+<p><strong>Problem:</strong> Institutions and GDP are likely jointly determined — rich countries can afford better institutions, and better institutions produce growth. OLS on <code>GDP ~ institutions</code> conflates both directions.</p>
+<p><strong>Solution:</strong> Use <strong>settler mortality</strong> as an instrument for institutional quality. The logic: places where colonial settlers died at high rates got extractive institutions (because settlers didn’t stay), and those institutions persisted. Settler mortality affects GDP <em>only through</em> its effect on institutions, not directly.</p>
+<section id="first-stage-does-the-instrument-predict-the-endogenous-variable" class="level3">
+<h3 class="anchored" data-anchor-id="first-stage-does-the-instrument-predict-the-endogenous-variable">First stage: Does the instrument predict the endogenous variable?</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>first_stage <span class="ot">&lt;-</span> <span class="fu">lm</span>(risk <span class="sc">~</span> logmort0, <span class="at">data =</span> ajr2)</span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(first_stage)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = risk ~ logmort0, data = ajr2)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-2.6507 -0.9889  0.0324  0.8498  3.3768 
+
+Coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)   9.3659     0.6106  15.339  &lt; 2e-16 ***
+logmort0     -0.6133     0.1269  -4.831 9.27e-06 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 1.262 on 62 degrees of freedom
+Multiple R-squared:  0.2735,    Adjusted R-squared:  0.2618 
+F-statistic: 23.34 on 1 and 62 DF,  p-value: 9.273e-06</code></pre>
+</div>
+</div>
+</section>
+<section id="reduced-form-does-the-instrument-affect-the-outcome" class="level3">
+<h3 class="anchored" data-anchor-id="reduced-form-does-the-instrument-affect-the-outcome">Reduced form: Does the instrument affect the outcome?</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>reduced_form <span class="ot">&lt;-</span> <span class="fu">lm</span>(loggdp <span class="sc">~</span> logmort0, <span class="at">data =</span> ajr2)</span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(reduced_form)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = loggdp ~ logmort0, data = ajr2)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-2.7325 -0.5197  0.1361  0.4801  1.4123 
+
+Coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept) 10.69980    0.37395  28.613  &lt; 2e-16 ***
+logmort0    -0.57005    0.07774  -7.332  5.7e-10 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 0.7729 on 62 degrees of freedom
+Multiple R-squared:  0.4644,    Adjusted R-squared:  0.4558 
+F-statistic: 53.77 on 1 and 62 DF,  p-value: 5.704e-10</code></pre>
+</div>
+</div>
+</section>
+<section id="iv-estimation" class="level3">
+<h3 class="anchored" data-anchor-id="iv-estimation">IV estimation</h3>
+<p>The <code>ivreg()</code> function estimates the two-stage least squares model. The syntax uses <code>|</code> to separate the structural equation (left) from the instruments (right):</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>iv_model <span class="ot">&lt;-</span> <span class="fu">ivreg</span>(loggdp <span class="sc">~</span> risk <span class="sc">|</span> logmort0, <span class="at">data =</span> ajr2)</span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(iv_model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+ivreg(formula = loggdp ~ risk | logmort0, data = ajr2)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-2.41118 -0.54771  0.08268  0.69741  1.68871 
+
+Coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)   1.9943     1.0240   1.947    0.056 .  
+risk          0.9295     0.1561   5.955 1.33e-07 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 0.9517 on 62 degrees of freedom
+Multiple R-Squared: 0.188,  Adjusted R-squared: 0.1749 
+Wald test: 35.46 on 1 and 62 DF,  p-value: 1.327e-07 </code></pre>
+</div>
+</div>
+</section>
+<section id="comparing-ols-vs.-iv" class="level3">
+<h3 class="anchored" data-anchor-id="comparing-ols-vs.-iv">Comparing OLS vs.&nbsp;IV</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>ols_biased <span class="ot">&lt;-</span> <span class="fu">lm</span>(loggdp <span class="sc">~</span> risk, <span class="at">data =</span> ajr2)</span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a><span class="fu">stargazer</span>(ols_biased, iv_model, <span class="at">type =</span> <span class="st">"html"</span>,</span>
+<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a>          <span class="at">column.labels =</span> <span class="fu">c</span>(<span class="st">"OLS (biased?)"</span>, <span class="st">"IV (consistent)"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<table style="text-align:center">
+<tbody><tr>
+<td colspan="3" style="border-bottom: 1px solid black">
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td colspan="2">
+<em>Dependent variable:</em>
+</td>
+</tr>
+<tr>
+<td>
+</td>
+<td colspan="2" style="border-bottom: 1px solid black">
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td colspan="2">
+loggdp
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+<em>OLS</em>
+</td>
+<td>
+<em>instrumental</em>
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+<em></em>
+</td>
+<td>
+<em>variable</em>
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+OLS (biased?)
+</td>
+<td>
+IV (consistent)
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+(1)
+</td>
+<td>
+(2)
+</td>
+</tr>
+<tr>
+<td colspan="3" style="border-bottom: 1px solid black">
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+risk
+</td>
+<td>
+0.516<sup>***</sup>
+</td>
+<td>
+0.929<sup>***</sup>
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+(0.063)
+</td>
+<td>
+(0.156)
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Constant
+</td>
+<td>
+4.687<sup>***</sup>
+</td>
+<td>
+1.994<sup>*</sup>
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+(0.417)
+</td>
+<td>
+(1.024)
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td colspan="3" style="border-bottom: 1px solid black">
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Observations
+</td>
+<td>
+64
+</td>
+<td>
+64
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+R<sup>2</sup>
+</td>
+<td>
+0.524
+</td>
+<td>
+0.188
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Adjusted R<sup>2</sup>
+</td>
+<td>
+0.516
+</td>
+<td>
+0.175
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Residual Std. Error (df = 62)
+</td>
+<td>
+0.729
+</td>
+<td>
+0.952
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+F Statistic
+</td>
+<td>
+68.170<sup>***</sup> (df = 1; 62)
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td colspan="3" style="border-bottom: 1px solid black">
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+<em>Note:</em>
+</td>
+<td colspan="2" style="text-align:right">
+<sup><em></em></sup><em>p&lt;0.1; <sup><strong></strong></sup><strong>p&lt;0.05; <sup></sup></strong></em>p&lt;0.01
+</td>
+</tr>
+</tbody></table>
+<p>If the IV coefficient is substantially different from OLS, it suggests endogeneity was biasing the OLS estimate.</p>
+<hr>
+</section>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 29%">
+<col style="width: 37%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Problem</th>
+<th>Method</th>
+<th>Key Idea</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Unobserved heterogeneity</td>
+<td>Panel data (FE/RE)</td>
+<td>Compare units to themselves over time</td>
+</tr>
+<tr class="even">
+<td>Causal pathways</td>
+<td>Mediation analysis</td>
+<td>Decompose total effect into direct + indirect</td>
+</tr>
+<tr class="odd">
+<td>Non-random samples</td>
+<td>Heckman selection</td>
+<td>Jointly model selection and outcome</td>
+</tr>
+<tr class="even">
+<td>Endogeneity / reverse causality</td>
+<td>Instrumental variables</td>
+<td>Isolate exogenous variation in predictor</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

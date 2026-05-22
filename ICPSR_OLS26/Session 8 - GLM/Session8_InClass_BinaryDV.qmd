@@ -1,0 +1,670 @@
+---
+title: "Session 8: Binary Dependent Variables"
+author: "Patrick Shea"
+format: html
+execute:
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup
+
+## Set your working directory to the ICPSR_regression folder
+## Change the path below to match your computer
+# setwd("~/ICPSR_regression")
+setwd("C:/Users/Patrick Shea/Dropbox/My Projects/Spring 2026/ICPSR/ICPSR_OLS26")
+
+rm(list = ls())
+
+# install.packages(c("faraway", "foreign", "lattice", "stargazer", "mfx",
+#                     "effects", "reshape2", "ResourceSelection", "ROCR",
+#                     "pROC", "heatmapFit", "separationplot", "interplot"))
+library(faraway)
+require(foreign)
+```
+
+---
+
+# Part 1: The Linear Probability Model and Its Limits
+
+## Supreme Court decisions data
+
+Our first example uses data on U.S. Supreme Court habeas corpus decisions. The outcome variable `propetit` equals 1 if the Court ruled in favor of the petitioner and 0 otherwise. Our key predictor is the Court's ideological orientation (`liberal`), scaled from 0 to 1.
+
+```{r}
+#| label: load-court
+
+mydata <- read.dta("Court.dta")
+
+# Rescale liberalism to a 0--100 scale for easier interpretation
+mydata$liberal2 <- round(mydata$liberal * 100, 2)
+attach(mydata)
+```
+
+```{r}
+#| label: explore-court
+
+head(mydata)
+summary(mydata)
+```
+
+Let's look at the distribution of our key variables:
+
+```{r}
+#| label: explore-plots
+
+hist(mydata$liberal2,
+     main = "Distribution of Court Liberalism",
+     xlab = "Liberalism (0-100 scale)")
+
+library(lattice)
+densityplot(mydata$liberal2)
+
+barplot(sort(table(mydata$propetit), decreasing = TRUE), las = 2,
+        main = "Distribution of Petition Outcomes")
+```
+
+### Why not just use OLS?
+
+Let's plot the binary outcome against liberalism and fit a linear regression:
+
+```{r}
+#| label: lpm
+
+plot(propetit ~ liberal2, mydata, xlim = c(0, 100), ylim = c(0, 1),
+     xlab = "Liberalism", ylab = "Observed Petition Outcome")
+
+lmod <- lm(propetit ~ liberal2, mydata)
+abline(lmod)
+
+sumary(lmod)
+```
+
+This is the **linear probability model** (LPM). The line goes straight through the data, but notice the problem: for very low or very high values of liberalism, the predicted probability can go below 0 or above 1. That's nonsensical for a probability. We need a model that constrains predictions to the [0, 1] interval.
+
+---
+
+# Part 2: Logit and Probit Models
+
+Both **logit** and **probit** solve the LPM's problem by passing the linear predictor ($X\beta$) through a nonlinear function that maps any real number onto (0, 1):
+
+- **Logit** uses the logistic function: $P(Y=1) = \frac{e^{X\beta}}{1 + e^{X\beta}}$
+- **Probit** uses the cumulative normal: $P(Y=1) = \Phi(X\beta)$
+
+```{r}
+#| label: logit-probit
+
+logitmod  <- glm(propetit ~ liberal2, family = binomial(link = logit), data = mydata)
+probitmod <- glm(propetit ~ liberal2, family = binomial(link = probit), data = mydata)
+
+summary(logitmod)
+summary(probitmod)
+```
+
+Comparing all three models side by side:
+
+```{r}
+#| label: three-models
+#| results: asis
+
+library(stargazer)
+stargazer(lmod, logitmod, probitmod, type = "text")
+```
+
+The coefficients across logit and probit are on different scales (log-odds vs. z-scores), so they're not directly comparable in magnitude. What matters is the sign, significance, and --- most importantly --- the **predicted probabilities**.
+
+---
+
+# Part 3: Interpreting Coefficients
+
+## Predicted probabilities at specific values
+
+The raw logit coefficient tells us the change in **log-odds** per unit increase in liberalism. To make this concrete, we compute predicted probabilities at the minimum, median, and maximum of liberalism:
+
+```{r}
+#| label: pred-probs-specific
+
+summary(liberal2)
+
+# At min (21), median (41), and max (83.11)
+# Logit predictions
+ilogit(-3.2828 + 0.06929 * 21)
+ilogit(-3.2828 + 0.06929 * 41)
+ilogit(-3.2828 + 0.06929 * 83.11)
+
+# Probit predictions (for comparison)
+pnorm(-1.9731 + 0.04176 * 21)
+pnorm(-1.9731 + 0.04176 * 41)
+pnorm(-1.9731 + 0.04176 * 83.11)
+```
+
+Notice how logit and probit give nearly identical predicted probabilities, even though the raw coefficients look different.
+
+## Marginal effects
+
+A **marginal effect** answers the question: at the average case, how much does a one-unit increase in liberalism change the *probability* of a pro-petitioner decision?
+
+```{r}
+#| label: marginal-effects
+
+library(mfx)
+logitmfx(propetit ~ liberal2, data = mydata)
+probitmfx(propetit ~ liberal2, data = mydata)
+```
+
+Marginal effects are on the probability scale and are directly comparable across logit and probit.
+
+## Odds ratios
+
+For logit models specifically, we can exponentiate the coefficients to get **odds ratios**:
+
+```{r}
+#| label: odds-ratios
+
+# Point estimates
+exp(logitmod$coefficients)
+
+# With 95% confidence intervals
+exp(confint(logitmod))
+
+# Or use the logitor function
+logitor(propetit ~ liberal2, data = mydata)
+```
+
+An odds ratio of 1.07 means that each additional point of liberalism multiplies the odds of a pro-petitioner decision by 1.07 (a 7% increase in the odds).
+
+---
+
+# Part 4: Visualizing Predictions
+
+## Fitted values vs. the original data
+
+The `predict()` function can return predictions on two scales: the **link** scale (log-odds for logit, z-scores for probit) and the **response** scale (probabilities).
+
+```{r}
+#| label: fitted-values
+
+logit.phat2  <- predict(logitmod)                  # Link scale (log-odds)
+probit.phat2 <- predict(probitmod)                  # Link scale (z-scores)
+logit.phat3  <- predict(logitmod, type = "response")  # Probability scale
+probit.phat3 <- predict(probitmod, type = "response") # Probability scale
+```
+
+On the link scale, the relationship is linear by construction:
+
+```{r}
+#| label: plot-link
+
+plot(logit.phat2 ~ mydata$liberal2, lty = 1, type = "l",
+     xlab = "Liberalism", ylab = "Predicted Log Odds")
+plot(probit.phat2 ~ mydata$liberal2, lty = 2, type = "l", col = "blue",
+     xlab = "Liberalism", ylab = "Predicted Z-Score")
+```
+
+On the probability scale, we see the characteristic S-curve:
+
+```{r}
+#| label: plot-response
+
+plot(logit.phat3 ~ mydata$liberal2, lty = 1, type = "l",
+     xlab = "Liberalism", ylab = "Predicted Probability")
+plot(probit.phat3 ~ mydata$liberal2, lty = 2, type = "l", col = "blue",
+     xlab = "Liberalism", ylab = "Predicted Probability")
+```
+
+## Overlaying logit and probit curves on the data
+
+This is perhaps the most informative plot --- the raw data points with both fitted curves:
+
+```{r}
+#| label: overlay-curves
+
+plot(propetit ~ liberal2, mydata,
+     xlim = c(0, 100), ylim = c(0, 1),
+     xlab = "Liberalism", ylab = "Prob of Granting Relief")
+x <- seq(0, 100, 1)
+lines(x, ilogit(-3.2828 + 0.06929 * x), lty = 1, col = "red", lwd = 2)
+lines(x, pnorm(-1.9731 + 0.04176 * x), lty = 2, col = "blue", lwd = 2)
+legend("topleft", legend = c("Logit", "Probit"),
+       col = c("red", "blue"), lty = c(1, 2), lwd = 2)
+```
+
+The two curves are nearly indistinguishable except at the extreme tails.
+
+## Side-by-side comparison
+
+```{r}
+#| label: side-by-side
+
+xb1 <- 0.06929 * liberal2
+xb2 <- 0.04176 * liberal2
+
+par(mfrow = c(1, 2))
+plot(logit.phat3 ~ xb1, lty = 1, type = "lines", xlim = c(1, 6),
+     xlab = "Logit Model", ylab = "Predicted Probability")
+plot(probit.phat3 ~ xb2, lty = 2, type = "lines", col = "blue",
+     xlim = c(0, 4), xlab = "Probit Model", ylab = "Predicted Probability")
+par(mfrow = c(1, 1))
+```
+
+## The effects package
+
+The `effects` package automates prediction plots and works for any GLM:
+
+```{r}
+#| label: effects-simple
+
+library(effects)
+plot(allEffects(logitmod))
+```
+
+---
+
+# Part 5: From Log-Odds to Probabilities Step by Step
+
+This section walks through the math of transforming predictions, which is useful for building intuition about what the logit model is actually doing.
+
+```{r}
+#| label: transform-logodds
+
+# Start with log-odds predictions
+plot(logit.phat2 ~ mydata$liberal2, lty = 1, type = "l",
+     xlab = "Liberalism", ylab = "Predicted Log Odds",
+     main = "Step 1: Log-Odds (hard to interpret)")
+```
+
+Exponentiate to get **odds** ($e^{\text{log-odds}}$):
+
+```{r}
+#| label: transform-odds
+
+plot(exp(logit.phat2) ~ mydata$liberal2, lty = 2, type = "l",
+     xlab = "Liberalism", ylab = "Predicted Odds",
+     main = "Step 2: Odds (better, but still unintuitive)")
+```
+
+Convert odds to **probabilities** using $p = \frac{\text{odds}}{1 + \text{odds}}$:
+
+```{r}
+#| label: transform-probs
+
+plot((exp(logit.phat2) / (1 + exp(logit.phat2))) ~ mydata$liberal2,
+     lty = 2, type = "l",
+     xlab = "Liberalism", ylab = "Predicted Probabilities",
+     main = "Step 3: Probabilities (most intuitive)")
+```
+
+This is identical to calling `predict(logitmod, type = "response")`:
+
+```{r}
+#| label: transform-verify
+
+plot(logit.phat3 ~ mydata$liberal2, lty = 2, type = "l",
+     xlab = "Liberalism", ylab = "Predicted Probabilities (response)",
+     main = "Verification: same curve")
+```
+
+## Residuals for binary models
+
+OLS-style residual plots don't work well for binary outcomes, but we can still examine them. **Response residuals** are simply $y - \hat{p}$; **Pearson residuals** standardize by the variance:
+
+```{r}
+#| label: residuals
+
+resid.res <- residuals(logitmod, type = "response")
+resid.mod <- residuals(logitmod, type = "pear")
+
+plot(resid.res ~ mydata$liberal2, main = "Response Residuals")
+plot(resid.mod ~ mydata$liberal2, main = "Pearson Residuals")
+```
+
+The banding pattern (two horizontal strips) is normal for binary outcomes --- it's inherent in the data, not a sign of model failure.
+
+---
+
+# Part 6: Multivariate Models
+
+## Adding controls
+
+Just as with OLS, we can include additional predictors. The `update()` function is a shortcut for adding variables to an existing model:
+
+```{r}
+#| label: multivariate
+
+logitmod2 <- update(logitmod, . ~ . + usparty + ineffcou + multpet)
+summary(logitmod2)
+```
+
+```{r}
+#| label: multi-compare
+#| results: asis
+
+stargazer(logitmod, logitmod2, type = "text")
+```
+
+Odds ratios with confidence intervals for the full model:
+
+```{r}
+#| label: multi-or
+
+round(exp(cbind(Estimate = coef(logitmod2), confint(logitmod2))), 2)
+```
+
+Visualizing effects of each predictor:
+
+```{r}
+#| label: multi-effects
+
+plot(allEffects(logitmod))
+plot(effect("liberal2", logitmod))
+plot(allEffects(logitmod2))
+plot(effect("liberal2", logitmod2))
+```
+
+## Predictions on different scales
+
+```{r}
+#| label: multi-predictions
+
+# Link scale (log-odds)
+logit.phat2  <- predict(logitmod)
+probit.phat2 <- predict(probitmod)
+
+# Response scale (probabilities)
+logit.phat3  <- predict(logitmod, type = "response")
+probit.phat3 <- predict(probitmod, type = "response")
+
+# Log-odds scale
+plot(logit.phat2 ~ mydata$liberal2, lty = 1, type = "l",
+     xlab = "Liberalism", ylab = "Predicted Log Odds")
+plot(probit.phat2 ~ mydata$liberal2, lty = 2, type = "l", col = "blue",
+     xlab = "Liberalism", ylab = "Predicted Log Odds")
+
+# Probability scale
+plot(logit.phat3 ~ mydata$liberal2, lty = 1, type = "l",
+     xlab = "Liberalism", ylab = "Predicted Probability")
+plot(probit.phat3 ~ mydata$liberal2, lty = 2, type = "l", col = "blue",
+     xlab = "Liberalism", ylab = "Predicted Probability")
+```
+
+Comparing link-scale predictions vs. response-scale predictions:
+
+```{r}
+#| label: scale-comparison
+
+# Untranslated linear predictors
+xb1 <- -3.2828 + 0.06929 * liberal2
+xb2 <- -1.9731 + 0.04176 * liberal2
+
+# Translated through link function
+xb3 <- ilogit(-3.2828 + 0.06929 * liberal2)
+xb4 <- pnorm(-1.9731 + 0.04176 * liberal2)
+
+# Probabilities as a function of the linear predictor (S-curve)
+plot(logit.phat3 ~ xb1, lty = 1, type = "l",
+     xlab = "Linear Predictor (Xb)", ylab = "Predicted Probability")
+plot(probit.phat3 ~ xb2, lty = 2, type = "l", col = "blue",
+     xlab = "Linear Predictor (Xb)", ylab = "Predicted Probability")
+
+# Probabilities as a function of the translated predictor (should be 45-degree line)
+plot(logit.phat3 ~ xb3, lty = 1, type = "l",
+     xlab = "Transformed Xb", ylab = "Predicted Probability")
+plot(probit.phat3 ~ xb4, lty = 2, type = "l", col = "blue",
+     xlab = "Transformed Xb", ylab = "Predicted Probability")
+```
+
+---
+
+# Part 7: Another Example --- Cars and Fuel Efficiency
+
+To reinforce these ideas, let's try a completely different application using the built-in `mtcars` dataset. We'll create a binary variable for whether a car has "high" fuel efficiency (above the median MPG):
+
+```{r}
+#| label: mtcars-setup
+
+data(mtcars)
+mtcars$high_mpg <- ifelse(mtcars$mpg >= median(mtcars$mpg), 1, 0)
+
+model <- glm(high_mpg ~ wt + hp + am,
+             family = binomial(link = "logit"), data = mtcars)
+```
+
+Now let's generate predicted probabilities across the range of vehicle weight, separately for automatic and manual transmissions:
+
+```{r}
+#| label: mtcars-predictions
+
+wt_range   <- seq(min(mtcars$wt), max(mtcars$wt), length.out = 100)
+x.auto     <- data.frame(wt = wt_range, hp = mean(mtcars$hp), am = 0)
+x.manual   <- data.frame(wt = wt_range, hp = mean(mtcars$hp), am = 1)
+
+prob.auto   <- predict(model, newdata = x.auto, type = "response")
+prob.manual <- predict(model, newdata = x.manual, type = "response")
+
+plot_data <- data.frame(Weight = wt_range,
+                        Automatic = prob.auto,
+                        Manual = prob.manual)
+
+library(reshape2)
+plot_data_melt <- melt(plot_data, id.vars = "Weight",
+                       variable.name = "Transmission",
+                       value.name = "Probability")
+
+library(ggplot2)
+ggplot(plot_data_melt, aes(x = Weight, y = Probability, color = Transmission)) +
+  geom_line(linewidth = 1.2) +
+  xlab("Vehicle Weight (1000 lbs)") +
+  ylab("Predicted Probability of High MPG") +
+  scale_color_manual(values = c("blue", "red"),
+                     labels = c("Automatic", "Manual")) +
+  theme_minimal()
+```
+
+As weight increases, the probability of high fuel efficiency drops sharply --- and manual transmissions maintain higher probabilities at every weight level.
+
+---
+
+# Part 8: Model Diagnostics
+
+With binary outcomes, $R^2$ and standard residual plots aren't particularly informative. Instead, we use specialized diagnostics. Let's refit our Court models to demonstrate:
+
+```{r}
+#| label: refit-court
+
+logitmod  <- glm(propetit ~ liberal2, family = binomial(link = logit), data = mydata)
+logitmod2 <- update(logitmod, . ~ . + usparty + ineffcou + multpet)
+
+y     <- mydata$propetit
+pred1 <- predict(logitmod, type = "response")
+pred2 <- predict(logitmod2, type = "response")
+```
+
+## Hosmer-Lemeshow test
+
+This test groups observations into deciles of predicted probability and compares observed vs. expected event counts. A significant result ($p < 0.05$) suggests poor fit:
+
+```{r}
+#| label: hosmer-lemeshow
+
+library(ResourceSelection)
+hoslem.test(mydata$propetit, fitted(logitmod))
+hoslem.test(mydata$propetit, fitted(logitmod2))
+```
+
+## ROC curves
+
+A **Receiver Operating Characteristic** curve shows the trade-off between sensitivity (true positive rate) and specificity (1 - false positive rate) across all possible classification thresholds.
+
+Using the `ROCR` package (with color for threshold values):
+
+```{r}
+#| label: roc-rocr
+
+library(ROCR)
+
+predRoc1 <- prediction(pred1, mydata$propetit)
+perfRoc1 <- performance(predRoc1, "tpr", "fpr")
+plot(perfRoc1, colorize = TRUE, main = "ROC Curve --- Bivariate Model")
+
+predRoc2 <- prediction(pred2, mydata$propetit)
+perfRoc2 <- performance(predRoc2, "tpr", "fpr")
+plot(perfRoc2, colorize = TRUE, main = "ROC Curve --- Multivariate Model")
+```
+
+Or using the `pROC` package for a cleaner comparison:
+
+```{r}
+#| label: roc-proc
+
+library(pROC)
+plot.roc(y, pred1, col = "red", main = "ROC Curves: Model 1 (red) vs. Model 2 (blue)")
+plot.roc(y, pred2, col = "blue", add = TRUE)
+```
+
+## Area Under the Curve (AUC)
+
+The **AUC** summarizes the ROC curve in a single number. AUC = 0.5 means no better than chance; AUC = 1.0 means perfect discrimination:
+
+```{r}
+#| label: auc
+
+auc(mydata$propetit, pred1)
+auc(mydata$propetit, pred2)
+```
+
+## AIC and likelihood ratio test
+
+The **AIC** penalizes complexity (lower is better). The **likelihood ratio test** formally compares nested models:
+
+```{r}
+#| label: aic-lr
+
+extractAIC(logitmod)
+extractAIC(logitmod2)
+
+library(lmtest)
+lrtest(logitmod, logitmod2)
+```
+
+## Heatmap fit
+
+The heatmap fit diagnostic (Esarey and Pierce 2012) compares model predictions against smoothed empirical predictions. The 45-degree line represents perfect fit; any deviation suggests model misspecification. Dark shading indicates statistically significant deviations:
+
+```{r}
+#| label: heatmap
+
+library(heatmapFit)
+heatmap.fit(y, pred1, reps = 1000, legend = FALSE)
+heatmap.fit(y, pred2, reps = 1000, legend = FALSE)
+```
+
+## Separation plots
+
+**Separation plots** provide an intuitive visual assessment. Observations are sorted left-to-right by predicted probability. Each vertical line represents one case --- dark lines are actual events (pro-petitioner decisions), light lines are non-events. A well-fitting model pushes all dark lines to the right:
+
+```{r}
+#| label: separation
+
+library(separationplot)
+
+separationplot(pred = logitmod$fitted.values, actual = logitmod$y,
+               type = "rect", line = TRUE, show.expected = TRUE,
+               width = 9, height = 1.2, heading = "Bivariate Model")
+
+separationplot(pred = logitmod2$fitted.values, actual = logitmod2$y,
+               type = "rect", line = TRUE, show.expected = TRUE,
+               width = 9, height = 1.2, heading = "Multivariate Model")
+```
+
+For reference, here's what a **perfectly predicted** model would look like --- all events neatly stacked on the right:
+
+```{r}
+#| label: separation-perfect
+
+e <- plogis(seq(-10, 3.02, length.out = 500))
+f <- c(rep(0, 382), rep(1, 118))
+separationplot(pred = e, actual = f, type = "rect", show.expected = TRUE,
+               heading = "Perfect Prediction (Reference)")
+```
+
+---
+
+# Part 9: Interactions in Logit Models
+
+Interactions work the same way conceptually as in OLS --- the effect of one variable depends on the level of another. But because the logit link function is nonlinear, interpreting interactions requires extra care. Visualization is essential.
+
+## Liberalism x Party
+
+Does the effect of the Court's liberalism on petitioner outcomes depend on whether the U.S. government is a party to the case?
+
+```{r}
+#| label: interaction-court
+
+logitint <- glm(propetit ~ liberal2 * usparty + ineffcou + multpet,
+                family = binomial(link = logit), data = mydata)
+summary(logitint)
+```
+
+The `interplot` package visualizes how the marginal effect of one variable changes across values of the other:
+
+```{r}
+#| label: interplot-court
+
+library(interplot)
+interplot(m = logitint, var1 = "usparty", var2 = "liberal2", hist = TRUE)
+interplot(m = logitint, var1 = "liberal2", var2 = "usparty")
+```
+
+## Second example: military disputes
+
+To see interactions in a different context, we'll use a dataset on international conflict (`jcrv10.dta`). The question is whether the effect of the military balance (`ratio`) on conflict outcomes depends on the regime type (`dem`):
+
+```{r}
+#| label: load-jcrv10
+
+mydata2 <- read.dta("jcrv10.dta")
+
+logitint2 <- glm(wl3 ~ ratio * dem + init + concap + ally1,
+                 family = binomial(link = logit), data = mydata2)
+summary(logitint2)
+```
+
+Marginal effect of the military balance, conditional on democracy:
+
+```{r}
+#| label: interplot-jcrv-me
+
+interplot(m = logitint2, var1 = "ratio", var2 = "dem", hist = TRUE) +
+  xlab("Democracy") +
+  ylab("Marginal Effect of Military Balance") +
+  geom_hline(yintercept = 0, linetype = "dashed")
+```
+
+We can also plot **conditional predicted probabilities** instead of marginal effects, showing the full probability curves at low and high values of democracy:
+
+```{r}
+#| label: interplot-jcrv-pp
+
+interplot(m = logitint2, var1 = "ratio", var2 = "dem", hist = FALSE,
+          predPro = TRUE, var2_vals = c(-10, 10)) +
+  ggtitle("Conditional Predicted Probabilities") +
+  scale_colour_discrete(guide = guide_legend(title = "Dem"),
+                        labels = c("Low", "High")) +
+  scale_fill_discrete(guide = guide_legend(title = "Dem"),
+                      labels = c("Low", "High")) +
+  theme(legend.position = c(.2, .8),
+        legend.justification = c(0, .5))
+```
+
+---
+
+## Summary
+
+| Topic | Key Takeaway |
+|-------|-------------|
+| LPM vs. logit/probit | OLS on binary outcomes produces impossible predictions; logit and probit constrain probabilities to [0, 1] |
+| Interpretation | Use odds ratios, predicted probabilities, or marginal effects --- not raw coefficients |
+| Logit vs. probit | Nearly identical predicted probabilities; choice is largely a matter of convention |
+| Diagnostics | Hosmer-Lemeshow for calibration; ROC/AUC for discrimination; separation plots for visual assessment |
+| Interactions | Conceptually the same as OLS, but must visualize because the nonlinear link makes intuition harder |

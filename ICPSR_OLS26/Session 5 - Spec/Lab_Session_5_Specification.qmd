@@ -1,0 +1,48 @@
+---
+title: "Lab Session 5 — Specification"
+author: "Introduction to Applied Regression Analysis"
+date: "ICPSR Summer Program 2026"
+format:
+  pdf:
+    documentclass: article
+    geometry:
+      - margin=1in
+    fontsize: 11pt
+    colorlinks: true
+    linkcolor: blue
+    urlcolor: blue
+    highlight-style: tango
+---
+
+This lab uses data from Koch, Michael T., and Sarah A. Fulton. "In the Defense of Women: Gender, Office Holding, and National Security Policy in Established Democracies." *The Journal of Politics* 73, no. 1 (2011): 1--16. It will focus on different model specifications. Each row of the dataset is a country-year. The column `ccode` gives its Correlates of War country code. This is the original data from the article, so there are a lot of variables to contend with. For now, focus on `mil_exp_pergdp2` (military spending per capita), `m_femlead` (Female Leader), and `m_woman2` (Percentage of women in parliament). Examine these data closely using the techniques we reviewed.
+
+```r
+## You will need the haven library to import Stata data files
+library(haven)
+women12 <- read_dta("women12.dta")
+```
+
+1. Explore the dataset
+
+2. Fit a basic linear regression model
+
+```r
+model1 <- lm(mil_exp_pergdp2 ~ m_woman2 + m_femlead + cap
+             + mad_gdppc + postcold2, data = women12)
+```
+
+3. Fit a model with an interaction term between `m_femlead` (Woman Leader) and `m_woman2` (Percentage of Women in Parliament).
+
+4. Interpret the coefficients of the interaction model
+
+5. Plot the interaction effect of `m_woman2` and `m_femlead`.
+
+6. Assess the assumptions of the interaction model.
+
+7. Fit a log-linear model
+
+8. Interpret the coefficients of the log-linear model
+
+9. Fit a polynomial model (quadratic)
+
+10. Plot the polynomial model

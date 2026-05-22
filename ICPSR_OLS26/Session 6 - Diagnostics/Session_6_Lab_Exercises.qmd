@@ -1,0 +1,55 @@
+---
+title: "Lab Session 6 — Aid Effectiveness"
+author: "Introduction to Applied Regression Analysis"
+date: "ICPSR Summer Program 2026"
+format:
+  pdf:
+    documentclass: article
+    geometry:
+      - margin=1in
+    fontsize: 11pt
+    colorlinks: true
+    linkcolor: blue
+    urlcolor: blue
+    highlight-style: tango
+---
+
+## 1. Working with World Bank Data
+
+You will be working with data from the World Bank. R has a useful command to directly download data from the World Bank. In order to use this command, you'll first need to download its library (`WDI`):
+
+```r
+install.packages("WDI")
+library(WDI)
+
+# Download data from the World Bank
+aid_data <- WDI(indicator =
+  c("DT.ODA.ODAT.GN.ZS", "SE.PRM.CMPT.ZS", "SH.DYN.MORT",
+    "SH.STA.MMRT", "SL.EMP.VULN.ZS"),
+  country = "all", start = 1960, end = 2020, extra = TRUE)
+```
+
+These data examine the effectiveness of aid.
+
+2. You will tidy this dataset, and along the way you will calculate some commonly used transformations of the data.
+
+3. Merge another dataset (`polity4.dta`) to include more variables. Particularly, you are interested in the variable `polity2`. Use the following command:
+
+```r
+aid_data2 <- merge(aid_data, polity4,
+                   by = c("iso3c", "year"), all.x = TRUE)
+```
+
+4. Identify a continuous variable to proxy aid effectiveness (hints: common proxies include mortality rates, maternal mortality, school enrollment, but others may be fine). Once you find one, check assumptions about normality.
+
+5. Fit a regression with your proxy as the dependent variable, `DT.ODA.ODAT.GN.ZS` (aid received as a percent of GNI) as the main explanatory variable. What are your inferences?
+
+6. Next, include `polity2` as a control. Do your inferences change?
+
+7. Create a new variable, `demdum`, that is a binary measure of democracy. Any country with a `polity2` score of six or higher will be coded as a one. Otherwise a country is not a democracy. Does including this new measure of democracy change your results?
+
+8. Interact democracy and aid.
+
+9. How would you best present these preliminary results in a table and in a graph?
+
+10. Run some of the diagnostics tests discussed earlier. Are there any issues with the models?

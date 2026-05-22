@@ -1,0 +1,474 @@
+---
+title: "Session 7: Panel Data and Two-Stage Models"
+author: "Patrick Shea"
+format: html
+execute:
+  warning: false
+  message: false
+---
+
+## About this document
+
+This is a **Quarto** document --- it mixes explanatory text with executable R code. You can run each code chunk one at a time in RStudio, or click the **Render** button to produce a polished HTML page with all output embedded. No special setup is required beyond having the packages installed.
+
+```{r}
+#| label: setup
+
+## Set your working directory to the ICPSR_regression folder
+## Change the path below to match your computer
+# setwd("~/ICPSR_regression")
+rm(list = ls())
+setwd("C:/Users/Patrick Shea/Dropbox/My Projects/Spring 2026/ICPSR/ICPSR_OLS26/data")
+
+
+
+# install.packages(c("plm", "foreign", "gplots", "car", "stargazer",
+#                     "haven", "mediation", "sampleSelection", "AER"))
+library(plm)
+library(foreign)
+library(gplots)
+library(car)
+library(stargazer)
+```
+
+---
+
+# Part 1: Panel Data Methods
+
+## What is panel data?
+
+Up to now, every regression we've run has used **cross-sectional** data --- one snapshot per unit. Panel data (also called longitudinal data) observes the *same* units repeatedly over time. This gives us a big advantage: we can separate changes *within* a unit from differences *between* units, which helps control for unobserved characteristics that might bias our estimates.
+
+## Loading and visualizing panel structure
+
+We'll start with a simple teaching dataset from Princeton that tracks several countries over time. It loads directly from a URL, so no local file is needed.
+
+```{r}
+#| label: load-panel
+
+Panel <- read.dta("http://dss.princeton.edu/training/Panel101.dta")
+head(Panel)
+```
+
+### Visualizing how units change over time
+
+A key first step with panel data is to *see* the structure. The `coplot()` function shows the trajectory of each country in its own panel:
+
+```{r}
+#| label: coplot-lines
+
+coplot(y ~ year | country, type = "l", data = Panel)
+```
+
+```{r}
+#| label: coplot-points
+
+coplot(y ~ year | country, type = "b", data = Panel)
+```
+
+The `scatterplot()` function from the `car` package overlays all countries on a single plot, colored by group:
+
+```{r}
+#| label: scatter-panel
+
+scatterplot(y ~ year | country, boxplots = FALSE, smooth = TRUE,
+            reg.line = FALSE, data = Panel)
+```
+
+### The heterogeneity problem
+
+The whole motivation for panel methods is **heterogeneity** --- some countries are systematically higher or lower on our outcome. Let's visualize this directly.
+
+Heterogeneity across countries (unit effects):
+
+```{r}
+#| label: plotmeans-country
+
+plotmeans(y ~ country, main = "Heterogeneity across countries", data = Panel)
+```
+
+Heterogeneity across years (time effects):
+
+```{r}
+#| label: plotmeans-year
+
+plotmeans(y ~ year, main = "Heterogeneity across years", data = Panel)
+```
+
+If these plots show big differences across countries or years, ignoring the panel structure will bias our estimates.
+
+## Pooled OLS
+
+The simplest approach is to ignore the panel structure and run ordinary OLS, treating every country-year as an independent observation:
+
+```{r}
+#| label: pooled-ols
+
+ols <- lm(y ~ x1, data = Panel)
+summary(ols)
+```
+
+```{r}
+#| label: pooled-plot
+
+plot(Panel$x1, Panel$y, pch = 19, xlab = "x1", ylab = "y")
+abline(lm(Panel$y ~ Panel$x1), lwd = 3, col = "red")
+```
+
+This gives us one slope and one intercept. The implicit assumption is that *all countries are identical* --- there's no unobserved country-level factor affecting the outcome. That's a strong assumption.
+
+## Fixed effects: the intuition
+
+Fixed effects deals with heterogeneity by comparing each country **to itself** over time. The simplest way to understand this is to decompose each variable into two parts:
+
+- **Between variation** = each country's average (how countries differ from each other)
+- **Within variation** = each country's deviations from its own average (how a country changes over time)
+
+Fixed effects throws away the between variation and uses only the within variation.
+
+```{r}
+#| label: fe-manual
+
+# Decompose x1 into within and between components
+btw.x <- ave(Panel$x1, Panel$country)   # Between: country means
+wi.x  <- Panel$x1 - btw.x              # Within: deviations from country means
+
+# Fixed effects = regression on within variation only
+fixed.hand <- lm(Panel$y ~ wi.x)
+summary(fixed.hand)
+```
+
+We can also include *both* components to see how they differ:
+
+```{r}
+#| label: fe-within-between
+
+fixed.hand2 <- lm(Panel$y ~ wi.x + btw.x)
+summary(fixed.hand2)
+```
+
+If the within and between coefficients are very different, it suggests that unobserved country-level confounders are biasing the between estimate --- exactly the situation where fixed effects helps.
+
+## Fixed effects with dummy variables (LSDV)
+
+An equivalent approach is to include a separate intercept for each country. This is the **Least Squares Dummy Variable** estimator:
+
+```{r}
+#| label: fe-lsdv
+
+fixed.dum <- lm(y ~ x1 + factor(country) - 1, data = Panel)
+summary(fixed.dum)
+```
+
+Each country gets its own intercept, but they all share the same slope on `x1`. We can visualize the fitted values:
+
+```{r}
+#| label: fe-lsdv-plot
+
+yhat2 <- fixed.dum$fitted
+scatterplot(yhat2 ~ Panel$x1 | Panel$country, boxplots = FALSE,
+            xlab = "x1", ylab = "Fitted values", smooth = FALSE)
+```
+
+## Fixed effects with plm
+
+In practice, we use the `plm` package, which handles the demeaning automatically and produces clean output:
+
+```{r}
+#| label: fe-plm
+
+fixed <- plm(y ~ x1, data = Panel,
+             index = c("country", "year"), model = "within")
+summary(fixed)
+```
+
+We can extract the country-specific intercepts (the "fixed effects" themselves):
+
+```{r}
+#| label: fixef
+
+fixef(fixed)
+```
+
+And formally test whether fixed effects are needed versus pooled OLS. The null hypothesis is that all individual intercepts are equal (i.e., pooled OLS is adequate):
+
+```{r}
+#| label: f-test-fe
+
+pFtest(fixed, ols)
+```
+
+A significant result means the country effects are real and we should not ignore them.
+
+## Random effects
+
+The **random effects** model also accounts for individual heterogeneity, but assumes it is *random* and *uncorrelated with the predictors*. If that assumption holds, random effects is more efficient because it uses both within- and between-unit variation:
+
+```{r}
+#| label: random-effects
+
+random <- plm(y ~ x1, data = Panel,
+              index = c("country", "year"), model = "random")
+summary(random)
+```
+
+## Comparing all three models
+
+```{r}
+#| label: compare-models
+#| results: asis
+
+stargazer(ols, fixed, random, type = "html",
+          column.labels = c("Pooled OLS", "Fixed Effects", "Random Effects"))
+```
+
+## Hausman test: choosing between FE and RE
+
+The **Hausman test** checks whether the random effects assumption (no correlation between individual effects and predictors) is valid.
+
+- H0: Random effects is consistent (no correlation).
+- H1: Only fixed effects is consistent.
+
+```{r}
+#| label: hausman
+
+phtest(fixed, random)
+```
+
+If $p < 0.05$, reject H0 and use fixed effects. Otherwise, random effects is acceptable.
+
+## Additional diagnostic tests
+
+### Time fixed effects
+
+Should we also control for year-specific shocks? We add year dummies and test whether they're jointly significant:
+
+```{r}
+#| label: time-fe
+
+fixed.time <- plm(y ~ x1 + factor(year), data = Panel,
+                  index = c("country", "year"), model = "within")
+pFtest(fixed.time, fixed)
+```
+
+A significant result means time effects matter and should be included.
+
+### Serial correlation
+
+Panel data often exhibits serial correlation --- observations for the same unit in adjacent years are correlated. The Breusch-Godfrey test checks for this:
+
+```{r}
+#| label: serial-corr
+
+pbgtest(fixed)
+```
+
+If significant, we may need to cluster our standard errors or use other corrections.
+
+---
+
+# Part 2: Two-Stage Models
+
+Panel data addresses unobserved heterogeneity. But what about **reverse causality** or **omitted pathway** problems? This section covers three strategies: mediation analysis, sample selection correction, and instrumental variables.
+
+We'll use the Acemoglu, Johnson, and Robinson (AJR) dataset, which studies how colonial-era settler mortality affected modern economic outcomes through the quality of institutions.
+
+```{r}
+#| label: load-ajr
+
+library(haven)
+library(mediation)
+library(sampleSelection)
+library(AER)
+
+ajr2 <- read_dta("ajr2.dta")
+```
+
+## Mediation analysis
+
+**Research question:** Does settler mortality affect GDP *through* the quality of institutions, or does it have a direct effect as well?
+
+The causal chain we hypothesize is:
+
+$$\text{Settler Mortality} \longrightarrow \text{Institutions (risk)} \longrightarrow \text{GDP}$$
+
+Mediation analysis decomposes the total effect into a **direct** path and an **indirect** path (through the mediator).
+
+### Step 1: Total effect (without the mediator)
+
+First, what is the overall relationship between settler mortality and GDP?
+
+```{r}
+#| label: total-effect
+
+total_model <- lm(loggdp ~ logmort0, data = ajr2)
+summary(total_model)
+```
+
+### Step 2: Effect of X on the mediator
+
+Does settler mortality predict institutional quality?
+
+```{r}
+#| label: mediator-model
+
+mediator_model <- lm(risk ~ logmort0, data = ajr2)
+summary(mediator_model)
+```
+
+### Step 3: Direct and indirect effects
+
+When we include *both* settler mortality and institutions in the same model, we can see the direct effect of mortality (controlling for institutions) and use the coefficients to calculate the indirect effect:
+
+```{r}
+#| label: outcome-model
+
+outcome_model <- lm(loggdp ~ risk + logmort0, data = ajr2)
+summary(outcome_model)
+```
+
+The indirect effect is the product of the path from X to the mediator and the path from the mediator to Y:
+
+```{r}
+#| label: indirect-manual
+
+coef_risk     <- coef(outcome_model)["risk"]
+coef_logmort0 <- coef(mediator_model)["logmort0"]
+indirect_effect <- coef_risk * coef_logmort0
+indirect_effect
+```
+
+### Formal mediation test
+
+The `mediate()` function uses bootstrapping to get proper confidence intervals for the indirect, direct, and total effects:
+
+```{r}
+#| label: mediation-formal
+
+set.seed(12345)
+mediation_result <- mediate(mediator_model, outcome_model,
+                            treat = "logmort0", mediator = "risk",
+                            sims = 1000, boot = TRUE)
+summary(mediation_result)
+```
+
+```{r}
+#| label: mediation-plot
+
+plot(mediation_result)
+```
+
+**How to read the output:**
+
+- **ACME** (Average Causal Mediation Effect) = the indirect effect through institutions
+- **ADE** (Average Direct Effect) = the part of settler mortality's effect that doesn't go through institutions
+- **Total Effect** = ACME + ADE
+- **Proportion Mediated** = what fraction of the total effect operates through the mediator
+
+## Sample selection models (Heckman correction)
+
+Sometimes we observe the outcome only for a non-random subset of the population. For example, we only observe wages for people who *choose to work*. If the decision to work is correlated with wage determinants, naive OLS on the working subsample is biased.
+
+The **Heckman selection model** corrects for this by jointly modeling the selection equation (who works?) and the outcome equation (what wage do workers earn?).
+
+```{r}
+#| label: heckman-setup
+
+data("Mroz87", package = "sampleSelection")
+```
+
+First, the **naive approach** --- just running OLS on people who work:
+
+```{r}
+#| label: naive-ols
+
+working_women <- subset(Mroz87, lfp == 1)
+naive_model <- lm(log(wage) ~ educ + exper + I(exper^2) + age,
+                  data = working_women)
+summary(naive_model)
+```
+
+Now the **Heckman two-step estimator**. The selection equation includes variables that affect the decision to work (including `kids5` and `kids618`, which plausibly affect participation but not wages directly). The outcome equation models wages conditional on working:
+
+```{r}
+#| label: heckman-model
+
+selection_formula <- lfp ~ nwifeinc + educ + exper + I(exper^2) + age + kids5 + kids618
+outcome_formula   <- log(wage) ~ educ + exper + I(exper^2) + age
+
+heckman_result <- selection(selection_formula, outcome_formula,
+                            data = Mroz87, method = "2step")
+summary(heckman_result)
+```
+
+Comparing the naive OLS with the selection-corrected estimates:
+
+```{r}
+#| label: heckman-compare
+#| results: asis
+
+stargazer(naive_model, heckman_result, type = "html",
+          column.labels = c("Naive OLS", "Heckman Selection"))
+```
+
+If the **inverse Mills ratio** (the selection correction term, often labeled $\lambda$ or `rho`) is significant, it means selection bias was present and the correction matters.
+
+## Instrumental variables
+
+**Problem:** Institutions and GDP are likely jointly determined --- rich countries can afford better institutions, and better institutions produce growth. OLS on `GDP ~ institutions` conflates both directions.
+
+**Solution:** Use **settler mortality** as an instrument for institutional quality. The logic: places where colonial settlers died at high rates got extractive institutions (because settlers didn't stay), and those institutions persisted. Settler mortality affects GDP *only through* its effect on institutions, not directly.
+
+### First stage: Does the instrument predict the endogenous variable?
+
+```{r}
+#| label: first-stage
+
+first_stage <- lm(risk ~ logmort0, data = ajr2)
+summary(first_stage)
+```
+
+### Reduced form: Does the instrument affect the outcome?
+
+```{r}
+#| label: reduced-form
+
+reduced_form <- lm(loggdp ~ logmort0, data = ajr2)
+summary(reduced_form)
+```
+
+### IV estimation
+
+The `ivreg()` function estimates the two-stage least squares model. The syntax uses `|` to separate the structural equation (left) from the instruments (right):
+
+```{r}
+#| label: iv-estimate
+
+iv_model <- ivreg(loggdp ~ risk | logmort0, data = ajr2)
+summary(iv_model)
+```
+
+### Comparing OLS vs. IV
+
+```{r}
+#| label: ols-iv-compare
+#| results: asis
+
+ols_biased <- lm(loggdp ~ risk, data = ajr2)
+
+stargazer(ols_biased, iv_model, type = "html",
+          column.labels = c("OLS (biased?)", "IV (consistent)"))
+```
+
+If the IV coefficient is substantially different from OLS, it suggests endogeneity was biasing the OLS estimate.
+
+---
+
+## Summary
+
+| Problem | Method | Key Idea |
+|---------|--------|----------|
+| Unobserved heterogeneity | Panel data (FE/RE) | Compare units to themselves over time |
+| Causal pathways | Mediation analysis | Decompose total effect into direct + indirect |
+| Non-random samples | Heckman selection | Jointly model selection and outcome |
+| Endogeneity / reverse causality | Instrumental variables | Isolate exogenous variation in predictor |

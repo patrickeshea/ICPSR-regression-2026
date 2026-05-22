@@ -1,0 +1,49 @@
+---
+title: "Lab Exercise: Connecting the Course to Your Research"
+subtitle: "Introduction to Applied Regression Analysis — ICPSR 2026"
+author: "Patrick Shea"
+format:
+  html:
+    theme: cosmo
+    toc: false
+  pdf:
+    documentclass: article
+    geometry: margin=1in
+---
+
+## Overview
+
+For this exercise, think about a research question you are working on or would like to explore. You do not need a polished project — even a rough idea is fine. Take 15--20 minutes to work through the questions below individually, then we will discuss as a group.
+
+## Part A: From Question to Model (5 minutes)
+
+Write down, in plain language:
+
+1. What is your research question?
+2. What outcome are you trying to explain (your $Y$)?
+3. What is the main factor you think matters (your $X$)?
+4. What kind of data would you use, and what does a single observation look like (a person, a country-year, a firm, etc.)?
+
+## Part B: Complications and Choices (5--10 minutes)
+
+Pick **two** of the following prompts that feel most relevant to your project and write a few sentences on each.
+
+a. **Controls and confounders.** What other variables might you need to control for, and why? Are any of them potential confounders — variables that affect both $X$ and $Y$?
+
+b. **Functional form.** Do you think the relationship between $X$ and $Y$ is linear, or might you need a different specification (e.g., logged variables, polynomial terms, interactions, logit/probit)?
+
+c. **Panel structure.** If your data follow the same units over time, what challenges does that create? How might you address them?
+
+d. **Threats to inference.** What would make you worried that your estimate of the $X \rightarrow Y$ relationship is biased? What could you do about it?
+
+## Part C: What Would Make This Convincing? (5 minutes)
+
+If you could do one thing to strengthen the analysis you have just sketched — collect better data, use a different model, find an instrument, run a specific diagnostic — what would it be, and why?
+
+## Group Discussion 
+
+After completing the exercise, we will discuss as a group:
+
+- What was hardest about translating your research interest into regression terms?
+- Where do you see the biggest gap between what we covered this week and what you would actually need for your project?
+- Did anything we covered this week change how you think about a project you are already working on?
